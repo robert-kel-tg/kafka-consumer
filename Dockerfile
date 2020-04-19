@@ -8,7 +8,7 @@ COPY . .
 RUN apk add --update git make
 RUN make build
 
-FROM ubuntu:bionic AS final-image
+FROM ubuntu:bionic AS final
 
 RUN apt-get update && apt-get install --yes --no-install-recommends ca-certificates
 
