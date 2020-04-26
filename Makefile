@@ -25,7 +25,7 @@ clean:
 
 dev-start:
 	@go build -o ${DIR_OUT}/${BINARY_NAME} ${BINARY_SRC} && ${DIR_OUT}/${BINARY_NAME}  & echo $$! > $(PID_FILE)
-	@printf "$(OK_COLOR)==> Starting service: $(NO_COLOR)PID $$(cat $(PID_FILE))\n"
+	@printf "$(OK_COLOR)==> Starting service of: $(NO_COLOR)PID $$(cat $(PID_FILE))\n"
 
 dev-stop:
 	@printf "$(OK_COLOR)==> Killing service of: $(NO_COLOR)PID $$(cat $(PID_FILE))\n"
@@ -33,5 +33,5 @@ dev-stop:
 
 dev-restart: dev-stop dev-start
 
-dev-watch: dev-start ## Runs dev service using live reload on file change
+dev-watch: dev-start
 	@fswatch -or --event=Updated . | xargs -n1 -I {} make dev-restart
