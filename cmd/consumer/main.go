@@ -39,15 +39,7 @@ func main() {
 		}
 	}(ctx)
 
-	signalCh := make(chan os.Signal, 1)
-	signal.Notify(signalCh, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
-	go func() {
-		select {
-		case <-signalCh:
-			cancel()
-			return
-		}
-	}()
+	interruptListener(cancel)
 
 	log.Print("Running kafka consumer...")
 	<-stopCh
@@ -105,5 +97,17 @@ func consume(consumer *kafka.Consumer, ctx context.Context) {
 			}
 		}
 	}
+}
+
+func interruptListener(cancel context.CancelFunc) {
+	signalCh := make(chan os.Signal, 1)
+	signal.Notify(signalCh, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
+	go func() {
+		select {
+		case <-signalCh:
+			cancel()
+			return
+		}
+	}()
 }
 
