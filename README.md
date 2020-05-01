@@ -3,10 +3,6 @@ http://localhost:9021
 
 # kafka-consumer
 
-## Next step:
-- Check more here https://github.com/hellofresh/forget-customer-data-service
-- Confluent kafka client https://github.com/confluentinc/confluent-kafka-go
-
 ## Create topic
 docker-compose exec kafka  \
 kafka-topics --create --topic foo --partitions 1 --replication-factor 1 --if-not-exists --zookeeper zookeeper:2181
