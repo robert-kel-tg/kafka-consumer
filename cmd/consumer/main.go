@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"go.uber.org/zap"
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -13,19 +13,24 @@ import (
 func main() {
 	stopCh := make(chan bool)
 
-	c, err := initConsumer()
+	logger, _ := zap.NewProduction()
+	defer logger.Sync()
+
+	sugar := logger.Sugar()
+
+	c, err := initConsumer(sugar)
 	if err != nil {
-		log.Printf("config error %v", err)
+		sugar.Errorf("config error %v", err)
 	}
 
-	e := c.SubscribeTopics([]string{"foo", "^aRegex.*[f]oo"}, nil)
+	e := c.SubscribeTopics([]string{"transactions"}, nil)
 	if e != nil {
-		log.Printf("subscribe to topic error %v", err)
+		sugar.Errorf("subscribe to topic error %v", err)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	go consume(c, ctx)
+	go consume(c, ctx, sugar)
 
 	go func(ctx context.Context) {
 		for {
@@ -41,17 +46,17 @@ func main() {
 
 	interruptListener(cancel)
 
-	log.Print("Running kafka consumer...")
+	sugar.Info("Running kafka consumer...")
 	<-stopCh
 }
 
-func initConsumer()(*kafka.Consumer, error) {
+func initConsumer(sugar *zap.SugaredLogger)(*kafka.Consumer, error) {
 	config := &kafka.ConfigMap{
 		"bootstrap.servers": "localhost:9092",
 		"group.id":          "myGroup",
 		"auto.offset.reset": "earliest",
 		"go.events.channel.enable": true,
-		"enable.partition.eof": true,
+		"enable.partition.eof": false,
 		"session.timeout.ms": 6000,
 	}
 
@@ -60,30 +65,30 @@ func initConsumer()(*kafka.Consumer, error) {
 		return nil, err
 	}
 
-	fmt.Printf("Created Consumer %v\n", c)
+	sugar.Infof("Created Consumer %v\n", c)
 
 	return c, nil
 }
 
-func consume(consumer *kafka.Consumer, ctx context.Context) {
+func consume(consumer *kafka.Consumer, ctx context.Context, sugar *zap.SugaredLogger) {
 	defer func() {
-		fmt.Printf("Stopped consumer\n")
+		sugar.Infof("Stopped consumer\n")
 
 		err := consumer.Close()
 		if err != nil {
-			log.Printf("subscribe to topic error %v", err)
+			sugar.Errorf("subscribe to topic error %v", err)
 		}
 	}()
 
 	for {
 		select {
 		case s := <-ctx.Done():
-			log.Printf("Stopping kafka consumer...%v", s)
+			sugar.Infof("Stopping kafka consumer...%v", s)
 			return
 		case event := <-consumer.Events():
 			switch e := event.(type) {
 			case *kafka.Message:
-				fmt.Printf("%% Message on %s:\n%s\n", e.TopicPartition, string(e.Value))
+				sugar.Infof("%% Message on %s:\n%s\n", e.TopicPartition, string(e.Value))
 			case kafka.Error:
 				fmt.Fprintf(os.Stderr, "%% Error: %v\n", e)
 			case kafka.AssignedPartitions:
