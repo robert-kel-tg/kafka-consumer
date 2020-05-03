@@ -1,5 +1,5 @@
 ---
-version: '3'
+version: '3.7'
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
@@ -27,6 +27,7 @@ services:
     depends_on:
       - zookeeper
       - kafka
+      - schemaregistry
     ports:
       - 9021:9021
     environment:
@@ -38,9 +39,23 @@ services:
       CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
       CONFLUENT_METRICS_TOPIC_REPLICATION: 1
       CONTROL_CENTER_CUB_KAFKA_TIMEOUT: 300
+      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schemaregistry:8081'
       PORT: 9021
     volumes:
       - monitoring_interceptors:/usr/share/java/monitoring-interceptors/
+
+  schemaregistry:
+    image: confluentinc/cp-schema-registry:5.2.1
+    restart: always
+    depends_on:
+      - zookeeper
+      - kafka
+    environment:
+      SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: "zookeeper:2181"
+      SCHEMA_REGISTRY_HOST_NAME: schemaregistry
+      SCHEMA_REGISTRY_LISTENERS: "http://0.0.0.0:8081"
+    ports:
+      - 8081:8081
 
 volumes:
   monitoring_interceptors: {}
