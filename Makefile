@@ -29,9 +29,9 @@ dev-start:
 
 dev-stop:
 	@printf "$(OK_COLOR)==> Killing service of: $(NO_COLOR)PID $$(cat $(PID_FILE))\n"
-	@-kill $$(cat $(PID_FILE))
+	@-kill `pstree -p \`cat $(PID_FILE)\` | tr "\n" " " |sed "s/[^0-9]/ /g" |sed "s/\s\s*/ /g"`
 
 dev-restart: dev-stop dev-start
 
-dev-watch: dev-start
+dev-run: dev-start
 	@fswatch -or --event=Updated . | xargs -n1 -I {} make dev-restart
