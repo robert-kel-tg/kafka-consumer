@@ -1,11 +1,14 @@
-FROM golang:1.14-alpine AS builder
+FROM golang:1.14 AS builder
 MAINTAINER kel.robert@gmail.com
+
+RUN apt-get update && apt-get install -y \
+    fswatch \
+    psmisc
 
 WORKDIR /src
 
 COPY . .
 
-RUN apk add --update git make
 RUN make build
 
 FROM ubuntu:bionic AS final
