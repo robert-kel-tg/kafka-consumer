@@ -14,9 +14,12 @@ func main() {
 	stopCh := make(chan bool)
 
 	logger, _ := zap.NewProduction()
-	defer logger.Sync()
-
 	sugar := logger.Sugar()
+	defer func() {
+		if err := logger.Sync(); err != nil {
+			sugar.Errorf("closing sync error %v", err)
+		}
+	}()
 
 	c, err := initConsumer(sugar)
 	if err != nil {
@@ -52,7 +55,7 @@ func main() {
 
 func initConsumer(sugar *zap.SugaredLogger)(*kafka.Consumer, error) {
 	config := &kafka.ConfigMap{
-		"bootstrap.servers": "localhost:9092",
+		"bootstrap.servers": "kafka:29092",
 		"group.id":          "myGroup",
 		"auto.offset.reset": "earliest",
 		"go.events.channel.enable": true,
