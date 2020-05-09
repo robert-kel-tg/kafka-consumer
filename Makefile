@@ -13,12 +13,12 @@ PID_FILE := /tmp/$(BINARY_NAME).pid
 .DEFAULT_GOAL := help
 
 .PHONY: build
-build:
+build: ## Builds the binary
 	@printf "$(OK_COLOR)==> Building binary$(NO_COLOR)\n"
 	@go build -o ${DIR_OUT}/${BINARY_NAME} ${GO_LINKER_FLAGS} ${BINARY_SRC}
 
 .PHONY: install
-install: ## Installs binary
+install:
 	@printf "$(OK_COLOR)==> Installing binary$(NO_COLOR)\n"
 	@go install -v ${BINARY_SRC}
 
@@ -43,7 +43,9 @@ dev-restart: dev-stop dev-start ## Restarts, stops and starts again the service
 dev-run: dev-start ## Runs the service with reload (once after files got changed)
 	@fswatch -or --event=Updated . | xargs -n1 -I {} make dev-restart
 
-.PHONY: help ## List of all available targets
-help:
+.PHONY: help
+help: ## List of all available targets (Note: this is default target)
 	@echo List of all available target commands:
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
+	sort | \
+	awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
