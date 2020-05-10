@@ -1,0 +1,6 @@
+-   repo: https://github.com/tekwizely/pre-commit-golang
+    rev: master
+    hooks:
+        - id: go-vet
+        - id: go-lint
+        - id: go-imports
