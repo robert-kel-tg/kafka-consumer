@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
+	logger "github.com/robertke/kafka-consumer/pkg/infrastructure/log"
 	"go.uber.org/zap"
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -13,13 +15,12 @@ import (
 func main() {
 	stopCh := make(chan bool)
 
-	logger, _ := zap.NewProduction()
-	sugar := logger.Sugar()
-	defer func() {
-		if err := logger.Sync(); err != nil {
-			sugar.Errorf("closing sync error %v", err)
-		}
-	}()
+	l, err := logger.NewLogger(logger.DebugLogConfig)
+	if err != nil {
+		log.Fatalf("could not init logger: %v", err)
+	}
+
+	sugar := l.Sugar()
 
 	c, err := initConsumer(sugar)
 	if err != nil {
