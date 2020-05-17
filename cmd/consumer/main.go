@@ -56,7 +56,7 @@ func main() {
 
 func initConsumer(sugar *zap.SugaredLogger)(*kafka.Consumer, error) {
 	config := &kafka.ConfigMap{
-		"bootstrap.servers": "kafka:29092",
+		"bootstrap.servers": "broker:29092",
 		"group.id":          "myGroup",
 		"auto.offset.reset": "earliest",
 		"go.events.channel.enable": true,
