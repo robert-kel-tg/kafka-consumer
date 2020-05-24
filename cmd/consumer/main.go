@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/robertke/kafka-consumer/pkg/infrastructure/config"
+	"github.com/robertke/kafka-consumer/pkg/infrastructure/db"
 	logger "github.com/robertke/kafka-consumer/pkg/infrastructure/log"
 	"go.uber.org/zap"
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
@@ -13,11 +15,25 @@ import (
 )
 
 func main() {
+	conf, err := config.LoadConfig()
+	if err != nil {
+		log.Fatalf("could not load config: %v", err)
+	}
+
 	stopCh := make(chan bool)
 
 	l, err := logger.NewLogger(logger.DebugLogConfig)
 	if err != nil {
 		log.Fatalf("could not init logger: %v", err)
+	}
+
+	sqlDB, err := db.Connect(conf.DB.Driver, conf.DB)
+	if err != nil {
+		log.Fatalf("could not init db connection: %v", err)
+	}
+
+	if err := db.Migrate(conf.DB.MigrationsPath, sqlDB); err != nil {
+		log.Fatalf("could run migrations: %v", err)
 	}
 
 	sugar := l.Sugar()
