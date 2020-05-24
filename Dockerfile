@@ -9,12 +9,13 @@ WORKDIR /src
 
 COPY . .
 
-RUN make build
+RUN make migrate build
 
 FROM ubuntu:bionic AS final
 
 RUN apt-get update && apt-get install --yes --no-install-recommends ca-certificates
 
 COPY --from=builder /src/out/consumer /consumer
+COPY ./migrations ./migrations
 
 CMD ["./consumer"]

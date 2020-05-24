@@ -10,7 +10,17 @@ DIR_OUT=$(CURDIR)/out
 
 PID_FILE := /tmp/$(BINARY_NAME).pid
 
+OS:=linux
+MIGRATE_TOOL_TAG=v4.11.0
+MIGRATE_TOOL_URL:=https://github.com/golang-migrate/migrate/releases/download/${MIGRATE_TOOL_TAG}/migrate.${OS}-amd64.tar.gz
+
 .DEFAULT_GOAL := help
+
+migrate:
+	curl -L ${MIGRATE_TOOL_URL} | tar xvz
+	# Move it to the target name
+	mv migrate.${OS}-amd64 $@
+	chmod +x $@
 
 .PHONY: build
 build: ## Builds the binary
@@ -42,6 +52,14 @@ dev-restart: dev-stop dev-start ## Restarts, stops and starts again the service
 .PHONY: dev-run
 dev-run: dev-start ## Runs the service with reload (once after files got changed)
 	@fswatch -or --event=Updated . | xargs -n1 -I {} make dev-restart
+
+.PHONY: migrate-up
+migrate-up: migrate ## Runs DB migrations
+	./migrate -database=${DB_DSN} -path migrations up
+
+.PHONY: test-unit
+test-unit:  ## Run unit tests
+	go test -v -race -tags=unit -coverprofile=coverage.txt -covermode=atomic ./...
 
 .PHONY: help
 help: ## List of all available targets (Note: this is default target)
