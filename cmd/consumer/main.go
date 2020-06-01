@@ -6,6 +6,7 @@ import (
 	"github.com/robertke/kafka-consumer/pkg/infrastructure/config"
 	"github.com/robertke/kafka-consumer/pkg/infrastructure/consumer"
 	"github.com/robertke/kafka-consumer/pkg/infrastructure/db"
+	"github.com/robertke/kafka-consumer/pkg/infrastructure/handler"
 	logger "github.com/robertke/kafka-consumer/pkg/infrastructure/log"
 	"log"
 	"os"
@@ -39,12 +40,12 @@ func main() {
 
 	sugar := l.Sugar()
 
-	cons, errr := consumer.New(&conf, l)
-	if errr != nil {
-		sugar.Errorf("consumer error %v", errr)
+	c, err := consumer.New(&conf, l)
+	if err != nil {
+		sugar.Errorf("consumer error %v", err)
 	}
 
-	if er := cons.Run(ctx, FooMsgExecFn); er != nil {
+	if er := c.Run(ctx, handler.NewMsg(l)); er != nil {
 		sugar.Errorf("consumer run error %v", er)
 	}
 
@@ -54,18 +55,6 @@ func main() {
 
 	sugar.Info("Running kafka consumer...")
 	<-stopCh
-}
-
-func FooMsgExecFn(ctx context.Context, msg consumer.ConsumedMessage) error {
-	select {
-	case <-ctx.Done():
-		return nil
-	default:
-	}
-
-	fmt.Printf("function FooMsgExecFn: Topic %s Msg %s", msg.Topic, msg.Body)
-
-	return nil
 }
 
 func stopChListener(stopCh chan<- bool, ctx context.Context) {

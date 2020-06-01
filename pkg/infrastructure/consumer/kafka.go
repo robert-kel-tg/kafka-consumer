@@ -11,7 +11,7 @@ type (
 	Consumer struct {
 		consumer   *kafka.Consumer
 		topics     []string
-		log        *zap.Logger
+		log        logger
 	}
 
 	ConsumedMessage struct {
@@ -19,10 +19,18 @@ type (
 		Body  []byte
 	}
 
-	ExecFn func(ctx context.Context, msg ConsumedMessage) error
+	msgHandler interface {
+		Handle(ctx context.Context, msg ConsumedMessage) error
+	}
+
+	logger interface {
+		Sugar() *zap.SugaredLogger
+		Error(msg string, fields ...zap.Field)
+		Warn(msg string, fields ...zap.Field)
+	}
 )
 
-func New(conf *config.Config, log *zap.Logger) (*Consumer, error) {
+func New(conf *config.Config, log logger) (*Consumer, error) {
 
 	cnf, err := conf.AddKafkaConf()
 	if err != nil {
@@ -43,7 +51,7 @@ func New(conf *config.Config, log *zap.Logger) (*Consumer, error) {
 	return res, nil
 }
 
-func (c *Consumer) Run(ctx context.Context, exec ExecFn) error {
+func (c *Consumer) Run(ctx context.Context, exec msgHandler) error {
 	err := c.consumer.SubscribeTopics(c.topics, nil)
 	if err != nil {
 		return err
@@ -54,7 +62,7 @@ func (c *Consumer) Run(ctx context.Context, exec ExecFn) error {
 	return nil
 }
 
-func (c *Consumer) consumeMessages(ctx context.Context, execFn ExecFn) {
+func (c *Consumer) consumeMessages(ctx context.Context, h msgHandler) {
 	sugar := c.log.Sugar()
 	defer func() {
 		sugar.Infof("Stopped consumer\n")
@@ -73,7 +81,7 @@ func (c *Consumer) consumeMessages(ctx context.Context, execFn ExecFn) {
 		case event := <-c.consumer.Events():
 			switch e := event.(type) {
 			case *kafka.Message:
-				if err := execFn(ctx, ConsumedMessage{
+				if err := h.Handle(ctx, ConsumedMessage{
 					Topic: *e.TopicPartition.Topic,
 					Body:  e.Value,
 				}); err != nil {
