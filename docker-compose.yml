@@ -12,6 +12,7 @@ services:
     working_dir: /src
     environment:
       DATABASE_DSN: "postgres://msg:psw@postgres/messages?sslmode=disable"
+      TOPICS: "foo"
     depends_on:
       - broker
     command: bash -c "make dev-run"
