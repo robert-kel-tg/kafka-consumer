@@ -2,11 +2,9 @@ package consumer
 
 import (
 	"context"
-	"fmt"
 	"github.com/robertke/kafka-consumer/pkg/infrastructure/config"
 	"go.uber.org/zap"
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
-	"os"
 )
 
 type (
@@ -56,7 +54,7 @@ func (c *Consumer) Run(ctx context.Context, exec ExecFn) error {
 	return nil
 }
 
-func (c *Consumer) consumeMessages(ctx context.Context, exec ExecFn) {
+func (c *Consumer) consumeMessages(ctx context.Context, execFn ExecFn) {
 	sugar := c.log.Sugar()
 	defer func() {
 		sugar.Infof("Stopped consumer\n")
@@ -75,17 +73,21 @@ func (c *Consumer) consumeMessages(ctx context.Context, exec ExecFn) {
 		case event := <-c.consumer.Events():
 			switch e := event.(type) {
 			case *kafka.Message:
+				if err := execFn(ctx, ConsumedMessage{
+					Topic: *e.TopicPartition.Topic,
+					Body:  e.Value,
+				}); err != nil {
+					c.log.Error("an error occurred", zap.Error(err))
+				}
 				sugar.Infof("%% Message on %s:\n%s\n", e.TopicPartition, string(e.Value))
 			case kafka.Error:
-				fmt.Fprintf(os.Stderr, "%% Error: %v\n", e)
-			case kafka.AssignedPartitions:
-				fmt.Fprintf(os.Stderr, "%% %v\n", e)
-				c.consumer.Assign(e.Partitions)
-			case kafka.RevokedPartitions:
-				fmt.Fprintf(os.Stderr, "%% %v\n", e)
-				c.consumer.Unassign()
+				c.log.Error("error consuming", zap.Error(e))
 			case kafka.PartitionEOF:
-				fmt.Printf("%% Reached %v\n", e)
+				c.log.Warn("partition EOF", zap.Any("partition", event))
+			case kafka.OffsetsCommitted:
+				if e.Error != nil {
+					c.log.Error("an error occurred offsets commit", zap.Error(e.Error), zap.Any("offsets", e.Offsets))
+				}
 			}
 		}
 	}

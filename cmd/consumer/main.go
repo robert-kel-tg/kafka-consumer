@@ -44,7 +44,7 @@ func main() {
 		sugar.Errorf("consumer error %v", errr)
 	}
 
-	if er := cons.Run(ctx, nil); er != nil {
+	if er := cons.Run(ctx, FooMsgExecFn); er != nil {
 		sugar.Errorf("consumer run error %v", er)
 	}
 
@@ -54,6 +54,18 @@ func main() {
 
 	sugar.Info("Running kafka consumer...")
 	<-stopCh
+}
+
+func FooMsgExecFn(ctx context.Context, msg consumer.ConsumedMessage) error {
+	select {
+	case <-ctx.Done():
+		return nil
+	default:
+	}
+
+	fmt.Printf("function FooMsgExecFn: Topic %s Msg %s", msg.Topic, msg.Body)
+
+	return nil
 }
 
 func stopChListener(stopCh chan<- bool, ctx context.Context) {
