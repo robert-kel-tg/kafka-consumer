@@ -2,6 +2,7 @@ package consumer
 
 import (
 	"context"
+
 	"github.com/robertke/kafka-consumer/pkg/infrastructure/config"
 	"go.uber.org/zap"
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
@@ -9,9 +10,9 @@ import (
 
 type (
 	Consumer struct {
-		consumer   *kafka.Consumer
-		topics     []string
-		log        logger
+		consumer *kafka.Consumer
+		topics   []string
+		log      logger
 	}
 
 	ConsumedMessage struct {
@@ -44,8 +45,8 @@ func New(conf *config.Config, log logger) (*Consumer, error) {
 
 	res := &Consumer{
 		consumer: cons,
-		topics: conf.ConsumerConfig.Topics,
-		log: log,
+		topics:   conf.ConsumerConfig.Topics,
+		log:      log,
 	}
 
 	return res, nil
@@ -100,4 +101,3 @@ func (c *Consumer) consumeMessages(ctx context.Context, h msgHandler) {
 		}
 	}
 }
-

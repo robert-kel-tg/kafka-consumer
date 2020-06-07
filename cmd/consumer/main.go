@@ -3,15 +3,17 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/robertke/kafka-consumer/pkg/infrastructure/config"
 	"github.com/robertke/kafka-consumer/pkg/infrastructure/consumer"
 	"github.com/robertke/kafka-consumer/pkg/infrastructure/db"
 	"github.com/robertke/kafka-consumer/pkg/infrastructure/handler"
 	logger "github.com/robertke/kafka-consumer/pkg/infrastructure/log"
-	"log"
-	"os"
-	"os/signal"
-	"syscall"
+	"github.com/robertke/kafka-consumer/pkg/repo"
 )
 
 func main() {
@@ -45,7 +47,10 @@ func main() {
 		sugar.Errorf("consumer error %v", err)
 	}
 
-	if er := c.Run(ctx, handler.NewMsg(l)); er != nil {
+	fooRepo := repo.NewFoo(sqlDB)
+	h := handler.NewMsg(l, fooRepo)
+
+	if er := c.Run(ctx, h); er != nil {
 		sugar.Errorf("consumer run error %v", er)
 	}
 
@@ -82,4 +87,3 @@ func interruptListener(cancel context.CancelFunc) {
 		}
 	}()
 }
-
