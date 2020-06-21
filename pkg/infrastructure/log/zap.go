@@ -16,15 +16,15 @@ func NewLogger(envLogConfig string) (*zap.Logger, error) {
 	encoderCfg.TimeKey = "time"
 
 	cfg := zap.Config{
-		Level: zap.NewAtomicLevelAt(zapcore.InfoLevel),
-		Development: false,
-		DisableCaller: false,
+		Level:             zap.NewAtomicLevelAt(zapcore.InfoLevel),
+		Development:       false,
+		DisableCaller:     false,
 		DisableStacktrace: false,
 		Sampling: &zap.SamplingConfig{
-			Initial: 100,
+			Initial:    100,
 			Thereafter: 100,
 		},
-		Encoding: "json",
+		Encoding:      "json",
 		EncoderConfig: encoderCfg,
 		OutputPaths: []string{
 			"stdout",

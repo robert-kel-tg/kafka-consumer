@@ -54,7 +54,7 @@ func main() {
 		sugar.Errorf("consumer run error %v", er)
 	}
 
-	interruptListener(cancel)
+	signalListener(cancel)
 
 	stopChListener(stopCh, ctx)
 
@@ -76,7 +76,7 @@ func stopChListener(stopCh chan<- bool, ctx context.Context) {
 	}(ctx)
 }
 
-func interruptListener(cancel context.CancelFunc) {
+func signalListener(cancel context.CancelFunc) {
 	signalCh := make(chan os.Signal, 1)
 	signal.Notify(signalCh, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 	go func() {
